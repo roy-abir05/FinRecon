@@ -1,4 +1,5 @@
 import pandas as pd
+from reconciliation import run_ai_resolver
 
 orders = pd.read_csv("./data/orders.csv")
 gateway = pd.read_csv("./data/gateway.csv")
@@ -40,4 +41,11 @@ for bank_idx, bank_row in bank.iterrows():
             matched_bank_indices.add(bank_idx)
             break
 
-print(df)
+unmatched_df = df[df["match_status"]=="UNMATCHED"]
+unmatched_bank = bank.drop(bank.index[list(matched_bank_indices)])
+
+if not unmatched_df.empty and not unmatched_bank.empty:
+    print("\n--- Sending Exceptions to AI Resolver ---")
+    run_ai_resolver(unmatched_df, unmatched_bank)
+else:
+    print("\n--- No exceptions to resolve! All records matched deterministically. ---")
