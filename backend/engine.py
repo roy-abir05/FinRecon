@@ -42,21 +42,33 @@ if __name__=="__main__":
     ai_resolved_count = 0
     
     if not unmatched_df.empty and not unmatched_bank.empty:
-        print("\n[ENGINE] Sending Exceptions to AI Resolver")
+        print("\n[ENGINE] Sending Exceptions to AI Resolver (Batch Mode)...")
+        decision = run_ai_resolver(unmatched_df, unmatched_bank, mode="batch")
         
-        for _, target_row in unmatched_df.iterrows():
-            for bank_idx, candidate_row in unmatched_bank.iterrows():
-                
-                if bank_idx in matched_bank_indices:
-                    continue
-                
-                decision = run_ai_resolver(target_row, candidate_row)
-                
-                if decision.decision == "MATCH":
-                    print(f"  -> AI Matched Order {target_row['order_id']} to Bank Credit {candidate_row['credit']}!")
-                    ai_resolved_count += 1
-                    matched_bank_indices.add(bank_idx)
-                    break
+        print("\n[ENGINE] AI Batch Resolution Results:")
+        for match in decision.resolved_matches:
+            print(f"  ✅ Matched Order {match.order_id} to Bank Credit ₹{match.bank_credit}")
+            print(f"     Reasoning: {match.reasoning}")
+            ai_resolved_count += 1
+            
+            processed_df.loc[processed_df["order_id"] == match.order_id, "match_status"] = "AI_MATCH"
+            processed_df.loc[processed_df["order_id"] == match.order_id, "bank_date"] = pd.to_datetime(match.bank_date)
+            processed_df.loc[processed_df["order_id"] == match.order_id, "bank_narration"] = "AI_RESOLVED: " + match.reasoning
+            
+            matched_bank_row = unmatched_bank[
+                (unmatched_bank["credit"] == match.bank_credit) & 
+                (unmatched_bank["value_date"].astype(str).str.contains(match.bank_date[:10]))
+            ]
+            
+            if not matched_bank_row.empty:
+                bank_idx = matched_bank_row.index[0]
+                matched_bank_indices.add(bank_idx)
+                unmatched_bank = unmatched_bank.drop(bank_idx)
+            
+        if decision.unresolved_orders:
+            print("\n[ENGINE] Orders still unresolved (Escalated to Human):")
+            for order in decision.unresolved_orders:
+                print(f"  ⚠️ {order}")
                     
     else:
         print("\n[ENGINE] All records matched deterministically.")
@@ -72,3 +84,6 @@ if __name__=="__main__":
     total_matches = deterministic_matches + ai_resolved_count
     print(f"Overall Match Rate: {round(total_matches/total_records*100, 1)}%")
     print(f"Exceptions Escalate to Human: {len(unmatched_df) - ai_resolved_count}")
+
+    processed_df.to_csv("data/final_reconciliation_report.csv", index=False)
+    print("\n[ENGINE] Exported final dataset to data/final_reconciliation_report.csv")
