@@ -18,7 +18,7 @@ def load_and_prepare_data():
 
     return df, bank
 
-if __name__=="__main__":
+def run_pipeline():
     print("[ENGINE] Starting FinRecon Pipeline")
 
     df, bank = load_and_prepare_data()
@@ -75,15 +75,18 @@ if __name__=="__main__":
 
     total_records = len(df)
     deterministic_matches = total_records - len(unmatched_df)
-    
-    print("\n--- FinRecon Final Metrics ---")
-    print(f"Total Records: {total_records}")
-    print(f"Deterministic Matches: {deterministic_matches} ({round(deterministic_matches/total_records*100, 1)}%)")
-    print(f"AI-Resolved Matches: {ai_resolved_count} ({round(ai_resolved_count/total_records*100, 1)}%)")
-    
     total_matches = deterministic_matches + ai_resolved_count
-    print(f"Overall Match Rate: {round(total_matches/total_records*100, 1)}%")
-    print(f"Exceptions Escalate to Human: {len(unmatched_df) - ai_resolved_count}")
+    
+    return {
+        "status": "success",
+        "metrics": {
+            "total_records": total_records,
+            "deterministic_matches": deterministic_matches,
+            "ai_resolved_matches": ai_resolved_count,
+            "match_rate_percentage": round(total_matches / total_records * 100, 1),
+            "exceptions_escalated": len(unmatched_df) - ai_resolved_count
+        }
+    }
 
-    processed_df.to_csv("data/final_reconciliation_report.csv", index=False)
-    print("\n[ENGINE] Exported final dataset to data/final_reconciliation_report.csv")
+if __name__=="__main__":
+    run_pipeline()
