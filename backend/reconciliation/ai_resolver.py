@@ -39,7 +39,7 @@ def run_ai_resolver(unmatched_df, unmatched_bank):
     Based on this evidence, do these records represent the same transaction?
     """
 
-    print("\n--- Asking AI Resolver ---")
+    print("\n[RECONCILIATION/AI_RESOLVER] Asking AI Resolver")
     
 
     interaction = client.interactions.create(
@@ -54,6 +54,5 @@ def run_ai_resolver(unmatched_df, unmatched_bank):
 
     print(interaction.output_text)
     decision = AIReconciliationDecision.model_validate_json(interaction.output_text)
-    # print(decision)
 
     return decision
