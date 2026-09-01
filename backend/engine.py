@@ -28,41 +28,47 @@ if __name__=="__main__":
     processed_df, matched_bank_indices = matcher.apply_amount_and_reference_rules()
     print("[ENGINE] Rule matching complete")
 
+    print("[ENGINE] processed_df:")
+    print(processed_df)
+
     unmatched_df = processed_df[processed_df["match_status"] == "UNMATCHED"]
     unmatched_bank = bank.drop(bank.index[list(matched_bank_indices)])
+
+    print("\n[ENGINE] unmatched_df:")
+    print(unmatched_df)
+    print("\n[ENGINE] unmatched_bank:")
+    print(unmatched_bank)
+
+    ai_resolved_count = 0
     
     if not unmatched_df.empty and not unmatched_bank.empty:
         print("\n[ENGINE] Sending Exceptions to AI Resolver")
-        run_ai_resolver(unmatched_df, unmatched_bank)
+        
+        for _, target_row in unmatched_df.iterrows():
+            for bank_idx, candidate_row in unmatched_bank.iterrows():
+                
+                if bank_idx in matched_bank_indices:
+                    continue
+                
+                decision = run_ai_resolver(target_row, candidate_row)
+                
+                if decision.decision == "MATCH":
+                    print(f"  -> AI Matched Order {target_row['order_id']} to Bank Credit {candidate_row['credit']}!")
+                    ai_resolved_count += 1
+                    matched_bank_indices.add(bank_idx)
+                    break
+                    
     else:
-        print("\n[ENGINE] All records matched deterministically")
+        print("\n[ENGINE] All records matched deterministically.")
 
-# matched_bank_indices = set()
-
-# for bank_idx, bank_row in bank.iterrows():
-#     filtered_df = df[(df["net_amt"] == bank_row["credit"]) & (df["match_status"] == "UNMATCHED")]
-#     filtered_df = filtered_df[filtered_df["order_date"]<=bank_row["value_date"]]
-
-#     if filtered_df.size == 0:
-#         continue
-#     for fdf_idx, fdf_row in filtered_df.iterrows():
-#         full_ref = str(fdf_row["txn_ref"])
-#         stripped_ref = full_ref.split("_")[-1] if "_" in full_ref else full_ref
-#         if full_ref in str(bank_row["narration"]) or stripped_ref in str(bank_row["narration"]):
-
-#             current_order_id = fdf_row["order_id"]
-#             df.loc[df["order_id"] == current_order_id, "match_status"] = "EXACT_MATCH"
-#             df.loc[df["order_id"] == current_order_id, "bank_date"] = bank_row["value_date"]
-#             df.loc[df["order_id"] == current_order_id, "bank_narration"] = bank_row["narration"]
-
-#             matched_bank_indices.add(bank_idx)
-#             break
-
-# unmatched_df = df[df["match_status"]=="UNMATCHED"]
-# unmatched_bank = bank.drop(bank.index[list(matched_bank_indices)])
-
-# if not unmatched_df.empty and not unmatched_bank.empty:
-#     print("\n--- Sending Exceptions to AI Resolver ---")
-#     run_ai_resolver(unmatched_df, unmatched_bank)
-# else:
-#     print("\n--- No exceptions to resolve! All records matched deterministically. ---")
+    total_records = len(df)
+    deterministic_matches = total_records - len(unmatched_df)
+    
+    print("\n--- FinRecon Final Metrics ---")
+    print(f"Total Records: {total_records}")
+    print(f"Deterministic Matches: {deterministic_matches} ({round(deterministic_matches/total_records*100, 1)}%)")
+    print(f"AI-Resolved Matches: {ai_resolved_count} ({round(ai_resolved_count/total_records*100, 1)}%)")
+    
+    total_matches = deterministic_matches + ai_resolved_count
+    print(f"Overall Match Rate: {round(total_matches/total_records*100, 1)}%")
+    print(f"Exceptions Escalate to Human: {len(unmatched_df) - ai_resolved_count}")

@@ -18,10 +18,7 @@ class AIReconciliationDecision(BaseModel):
         description="A one or two sentence explanation of why this decision was made based on the provided evidence."
     )
 
-def run_ai_resolver(unmatched_df, unmatched_bank):
-    
-    target_record = unmatched_df.iloc[0]
-    candidate_record = unmatched_bank.iloc[0]
+def run_ai_resolver(target_record, candidate_record):
 
     prompt = f"""
     I have a financial reconciliation exception. Deterministic matching failed.
@@ -52,6 +49,7 @@ def run_ai_resolver(unmatched_df, unmatched_bank):
         },
     )
 
+    print("\n[RECONCILIATION/AI_RESOLVER] AI Resolver Reponse:")
     print(interaction.output_text)
     decision = AIReconciliationDecision.model_validate_json(interaction.output_text)
 
