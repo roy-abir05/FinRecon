@@ -10,7 +10,7 @@ import {
 
 export default function Sidebar() {
   const navItems = [
-    { name: "Overview", href: "/", icon: LayoutDashboard },
+    { name: "Overview", href: "/", icon: LayoutDashboard, active: true },
     { name: "Reconciliation", href: "/reconciliation", icon: CheckSquare },
     { name: "Exceptions", href: "/exceptions", icon: AlertCircle },
     { name: "AI Audit", href: "/audit", icon: Cpu },
@@ -19,34 +19,43 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-6">
-        <h1 className="text-xl font-bold tracking-tight text-gray-900">
+    <div className="w-64 bg-[#080808] border-r border-[#1a1a1a] h-screen flex flex-col">
+      <div className="p-6 pb-2">
+        <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
           FINRECON
+          <span className="text-[#00E5FF] font-black text-2xl leading-none">
+            .
+          </span>
         </h1>
-        <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-semibold">
-          August Reconciliation
-        </p>
+        <div className="mt-4 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></div>
+          <span className="text-xs uppercase tracking-wider font-mono text-[#8B96A8]">
+            System Live
+          </span>
+        </div>
       </div>
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className="flex-1 px-4 mt-8 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.href}
-              className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 hover:text-gray-900"
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                item.active
+                  ? "bg-[#111111] text-[#00E5FF] border border-[#222B3A]"
+                  : "text-[#8B96A8] hover:text-white hover:bg-[#111111]"
+              }`}
             >
-              <Icon className="w-4 h-4 text-gray-500" />
+              <Icon className="w-4 h-4" />
               {item.name}
             </Link>
           );
         })}
       </nav>
-      <div className="p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">
-          Engine Status:{" "}
-          <span className="text-green-500 font-medium">Online</span>
+      <div className="p-4 border-t border-[#1a1a1a]">
+        <div className="text-xs font-mono text-[#8B96A8]">
+          Build <span className="text-white">v1.0.0</span>
         </div>
       </div>
     </div>
