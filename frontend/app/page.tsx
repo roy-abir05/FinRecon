@@ -8,11 +8,15 @@ import {
   AlertCircle,
   Database,
   ArrowRight,
+  UploadCloud,
 } from "lucide-react";
 
 export default function Dashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [metrics, setMetrics] = useState<any>(null);
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [schemaData, setSchemaData] = useState<any>(null);
 
   const runPipeline = async () => {
     setIsRunning(true);
@@ -26,6 +30,30 @@ export default function Dashboard() {
       console.error("Failed to run pipeline:", error);
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+
+    Array.from(e.target.files).forEach((file) => {
+      formData.append("files", file);
+    });
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/v1/map-schema", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      setSchemaData(data);
+    } catch (error) {
+      console.error("Upload failed:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -54,13 +82,44 @@ export default function Dashboard() {
         </button>
       </header>
 
-      {!metrics && !isRunning && (
-        <div className="border border-[#1a1a1a] bg-[#0A0A0A] rounded-xl h-64 flex flex-col items-center justify-center text-[#8B96A8] text-sm">
-          <Database className="w-8 h-8 mb-3 text-[#333333]" />
-          <p className="font-mono">SYS_IDLE</p>
-          <p className="text-xs mt-1 text-[#555555]">
-            Awaiting manual pipeline trigger.
+      {!metrics && !schemaData && (
+        <div className="border border-dashed border-[#222B3A] bg-[#0A0A0A] hover:bg-[#111111] transition-colors rounded-xl h-64 flex flex-col items-center justify-center text-[#8B96A8] text-sm relative group">
+          <input
+            type="file"
+            multiple
+            onChange={handleFileUpload}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            accept=".csv"
+          />
+          {isUploading ? (
+            <Loader2 className="w-8 h-8 mb-3 text-[#00E5FF] animate-spin" />
+          ) : (
+            <UploadCloud className="w-8 h-8 mb-3 text-[#333333] group-hover:text-[#00E5FF] transition-colors" />
+          )}
+          <p className="font-mono text-white">
+            {isUploading ? "READING_BUFFERS..." : "DROP_CSV_FILES_HERE"}
           </p>
+          <p className="text-xs mt-2 text-[#555555]">
+            Click or drag Orders, Gateway, and Bank files to begin Schema
+            Inference.
+          </p>
+        </div>
+      )}
+
+      {/* Temporary view to prove the backend parsed the CSVs correctly */}
+      {schemaData && !metrics && (
+        <div className="bg-[#0A0A0A] border border-[#1a1a1a] rounded-xl p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider flex items-center justify-between">
+            Backend Dry Run Payload
+            <span className="text-xs font-mono text-[#00E5FF]">
+              STATUS: 200 OK
+            </span>
+          </h3>
+          <div className="bg-[#050505] border border-[#1a1a1a] p-4 rounded-md overflow-x-auto">
+            <pre className="text-xs font-mono text-[#8B96A8] whitespace-pre-wrap">
+              {JSON.stringify(schemaData, null, 2)}
+            </pre>
+          </div>
         </div>
       )}
 
