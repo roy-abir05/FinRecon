@@ -2,11 +2,7 @@ import pandas as pd
 from reconciliation.rules import RuleMatcher
 from reconciliation.ai_resolver import run_ai_resolver
 
-def load_and_prepare_data():
-    orders = pd.read_csv("./data/orders.csv")
-    gateway = pd.read_csv("./data/gateway.csv")
-    bank = pd.read_csv("./data/bank.csv")
-
+def load_and_prepare_data(orders, gateway, bank):
     orders["order_date"] = pd.to_datetime(orders["order_date"])
     gateway["settled_at"] = pd.to_datetime(gateway["settled_at"])
     bank["value_date"] = pd.to_datetime(bank["value_date"])
@@ -18,10 +14,10 @@ def load_and_prepare_data():
 
     return df, bank
 
-def run_pipeline():
+def run_pipeline(orders, gateway, bank):
     print("[ENGINE] Starting FinRecon Pipeline")
 
-    df, bank = load_and_prepare_data()
+    df, bank = load_and_prepare_data(orders, gateway, bank)
     
     print("[ENGINE] Running RuleMatcher...")
     matcher = RuleMatcher(df, bank)
@@ -76,17 +72,34 @@ def run_pipeline():
     total_records = len(df)
     deterministic_matches = total_records - len(unmatched_df)
     total_matches = deterministic_matches + ai_resolved_count
-    
+
+    processed_df = processed_df.fillna("")
+    unmatched_bank = unmatched_bank.fillna("")
+
+    exact_matches = processed_df[processed_df["match_status"] == "EXACT_MATCH"].to_dict(orient="records")
+    ai_matches = processed_df[processed_df["match_status"] == "AI_MATCH"].to_dict(orient="records")
+    exceptions = processed_df[processed_df["match_status"] == "UNMATCHED"].to_dict(orient="records")
+    orphan_bank_credits = unmatched_bank.to_dict(orient="records")
+
     return {
         "status": "success",
         "metrics": {
             "total_records": total_records,
             "deterministic_matches": deterministic_matches,
             "ai_resolved_matches": ai_resolved_count,
-            "match_rate_percentage": round(total_matches / total_records * 100, 1),
+            "match_rate_percentage": round(total_matches / total_records * 100, 1) if total_records > 0 else 0,
             "exceptions_escalated": len(unmatched_df) - ai_resolved_count
+        },
+        "data": {
+            "exact_matches": exact_matches,
+            "ai_matches": ai_matches,
+            "exceptions": exceptions,
+            "orphan_bank_credits": orphan_bank_credits
         }
     }
 
 if __name__=="__main__":
-    run_pipeline()
+    orders = pd.read_csv("./data/orders.csv")
+    gateway = pd.read_csv("./data/gateway.csv")
+    bank = pd.read_csv("./data/bank.csv")
+    run_pipeline(orders, gateway, bank)
