@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import pandas as pd
 import io
+import asyncio
 
 from engine import run_pipeline
 from reconciliation.schema_mapper import run_schema_mapper
@@ -40,7 +41,7 @@ async def map_schema(files: List[UploadFile] = File(...)):
             await uploaded_file.seek(0)
 
     try:
-        mapping_result = run_schema_mapper(file_samples_dict)
+        mapping_result = await asyncio.to_thread(run_schema_mapper, file_samples_dict)
         return {
             "status": "success",
             "data": mapping_result.model_dump()
