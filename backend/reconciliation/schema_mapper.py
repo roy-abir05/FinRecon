@@ -1,7 +1,10 @@
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from typing import Literal, List
 from google import genai
 from pydantic import BaseModel, Field
+
+load_dotenv()
 
 CanonicalColumns = Literal[
     # Orders
@@ -78,6 +81,9 @@ def run_schema_mapper(file_samples_dict: dict) -> SchemaMapperResult:
             "schema": SchemaMapperResult.model_json_schema()
         },
     )
+
+    print("\n[PRE-PROCESSING] AI Output")
+    print(interaction.output_text)
     
     result = SchemaMapperResult.model_validate_json(interaction.output_text)
     return result
