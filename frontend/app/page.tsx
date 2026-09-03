@@ -12,6 +12,8 @@ import {
   FileText,
   Check,
 } from "lucide-react";
+import { KpiCard } from "./components/KpiCard";
+import { FunnelBar } from "./components/FunnelBar";
 
 export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
@@ -312,73 +314,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function KpiCard({
-  title,
-  value,
-  icon: Icon,
-  highlight = "text-white",
-}: {
-  title: string;
-  value: string | number;
-  icon: any;
-  highlight?: string;
-}) {
-  return (
-    <div className="bg-[#0A0A0A] border border-[#1a1a1a] rounded-xl p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-[#8B96A8]">{title}</h3>
-        <Icon className="w-4 h-4 text-[#444444]" />
-      </div>
-      <div className={`text-3xl font-mono tracking-tight ${highlight}`}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function FunnelBar({
-  label,
-  value,
-  percentage,
-  color,
-  barColor = "bg-gray-200",
-  isException = false,
-}: {
-  label: string;
-  value: number;
-  percentage: number;
-  color: string;
-  barColor?: string;
-  isException?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center justify-between p-3 rounded-lg ${color} border border-[#1a1a1a]`}
-    >
-      <div className="flex-1">
-        <span
-          className={`text-sm font-medium ${isException && value > 0 ? "text-[#F05252]" : "text-[#E8EDF5]"}`}
-        >
-          {label}
-        </span>
-      </div>
-      <div className="flex-1 flex justify-center">
-        <div className="w-full bg-[#222B3A] rounded-full h-1.5 max-w-xs overflow-hidden">
-          <div
-            className={`h-1.5 rounded-full ${barColor}`}
-            style={{ width: `${Math.max(percentage, 1)}%` }}
-          ></div>
-        </div>
-      </div>
-      <div className="flex-1 flex justify-end">
-        <span className="text-sm font-mono text-[#8B96A8]">
-          {value} records
-        </span>
-      </div>
     </div>
   );
 }
