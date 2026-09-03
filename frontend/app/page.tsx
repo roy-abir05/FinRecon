@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [schemaData, setSchemaData] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
   const [rawFiles, setRawFiles] = useState<FileList | null>(null);
+  const [batchId, setBatchId] = useState<string | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -36,7 +37,8 @@ export default function Dashboard() {
         body: formData,
       });
       const data = await response.json();
-      setSchemaData(data.data); // Accessing the nested 'data' from our API response
+      setSchemaData(data.data);
+      setBatchId(data.batch_id);
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {
@@ -45,20 +47,33 @@ export default function Dashboard() {
   };
 
   const confirmAndReconcile = async () => {
+    if (!batchId || !schemaData) return;
+
     setIsRunning(true);
-    // In the next step, we will update this to send BOTH the files and the schemaData
-    // For now, we will simulate the pipeline running so you can see the UI transition
-    setTimeout(() => {
-      // Mocking the final metrics so we can see the transition
-      setMetrics({
-        total_records: 60,
-        deterministic_matches: 53,
-        ai_resolved_matches: 7,
-        match_rate_percentage: 100,
-        exceptions_escalated: 0,
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/v1/reconcile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          batch_id: batchId,
+          approved_schema: schemaData,
+        }),
       });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setMetrics(data.metrics);
+      } else {
+        console.error("Backend Error:", data.message);
+      }
+    } catch (error) {
+      console.error("Reconciliation failed:", error);
+    } finally {
       setIsRunning(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -96,7 +111,7 @@ export default function Dashboard() {
         )}
       </header>
 
-      {/* STEP 1: DROPZONE */}
+      {/* FILE UPLOAD */}
       {!schemaData && !metrics && (
         <div className="border border-dashed border-[#222B3A] bg-[#0A0A0A] hover:bg-[#111111] transition-colors rounded-xl h-64 flex flex-col items-center justify-center text-[#8B96A8] text-sm relative group cursor-pointer">
           <input
@@ -120,7 +135,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* STEP 2: SCHEMA REVIEW */}
+      {/* SCHEMA REVIEW */}
       {schemaData && !metrics && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-4 p-4 rounded-xl border border-[#1a1a1a] bg-[#0A0A0A]">
@@ -204,14 +219,166 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* STEP 3: FINAL METRICS (Hidden until Confirm & Reconcile is clicked) */}
+      {/* FINAL METRICS (Hidden until Confirm & Reconcile is clicked) */}
       {metrics && (
-        <div className="border border-[#1a1a1a] bg-[#0A0A0A] rounded-xl h-64 flex flex-col items-center justify-center text-[#8B96A8] text-sm">
-          <CheckCircle2 className="w-8 h-8 mb-3 text-[#22C55E]" />
-          <p className="font-mono text-white">RECONCILIATION_COMPLETE</p>
-          <p className="text-xs mt-1 text-[#555555]">Metrics view activated.</p>
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-4 gap-4">
+            <KpiCard
+              title="Ingested Records"
+              value={metrics.total_records}
+              icon={Database}
+            />
+            <KpiCard
+              title="Overall Match Rate"
+              value={`${metrics.match_rate_percentage}%`}
+              icon={CheckCircle2}
+              highlight="text-[#22C55E]"
+            />
+            <KpiCard
+              title="Deterministic Rules"
+              value={metrics.deterministic_matches}
+              icon={Zap}
+              highlight="text-[#35D6FF]"
+            />
+            <KpiCard
+              title="Pending Exceptions"
+              value={metrics.exceptions_escalated}
+              icon={AlertCircle}
+              highlight={
+                metrics.exceptions_escalated > 0
+                  ? "text-[#F5B83D]"
+                  : "text-[#8B96A8]"
+              }
+            />
+          </div>
+
+          <div className="bg-[#0A0A0A] border border-[#1a1a1a] rounded-xl p-6 shadow-sm">
+            <h3 className="text-sm font-semibold text-white mb-6 uppercase tracking-wider flex items-center justify-between">
+              Resolution Pipeline
+              <span className="text-xs font-mono text-[#8B96A8] font-normal">
+                LATENCY: API DEPENDENT
+              </span>
+            </h3>
+
+            <div className="space-y-4">
+              <FunnelBar
+                label="Initial Volume"
+                value={metrics.total_records}
+                percentage={100}
+                color="bg-[#111111]"
+                barColor="bg-[#333333]"
+              />
+              <div className="flex justify-center">
+                <ArrowRight className="w-4 h-4 text-[#333333] rotate-90" />
+              </div>
+              <FunnelBar
+                label="Rule-Based (Exact)"
+                value={metrics.deterministic_matches}
+                percentage={
+                  (metrics.deterministic_matches / metrics.total_records) * 100
+                }
+                color="bg-[#111111]"
+                barColor="bg-[#35D6FF]"
+              />
+              <div className="flex justify-center">
+                <ArrowRight className="w-4 h-4 text-[#333333] rotate-90" />
+              </div>
+              <FunnelBar
+                label="AI Resolver (Residual)"
+                value={metrics.ai_resolved_matches}
+                percentage={
+                  (metrics.ai_resolved_matches / metrics.total_records) * 100
+                }
+                color="bg-[#111111]"
+                barColor="bg-[#9B7BFF]"
+              />
+              <div className="flex justify-center">
+                <ArrowRight className="w-4 h-4 text-[#333333] rotate-90" />
+              </div>
+              <FunnelBar
+                label="Unresolved Exceptions"
+                value={metrics.exceptions_escalated}
+                percentage={
+                  metrics.total_records === 0
+                    ? 0
+                    : (metrics.exceptions_escalated / metrics.total_records) *
+                        100 || 2
+                }
+                color="bg-[#111111]"
+                barColor="bg-[#F05252]"
+                isException
+              />
+            </div>
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function KpiCard({
+  title,
+  value,
+  icon: Icon,
+  highlight = "text-white",
+}: {
+  title: string;
+  value: string | number;
+  icon: any;
+  highlight?: string;
+}) {
+  return (
+    <div className="bg-[#0A0A0A] border border-[#1a1a1a] rounded-xl p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-[#8B96A8]">{title}</h3>
+        <Icon className="w-4 h-4 text-[#444444]" />
+      </div>
+      <div className={`text-3xl font-mono tracking-tight ${highlight}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function FunnelBar({
+  label,
+  value,
+  percentage,
+  color,
+  barColor = "bg-gray-200",
+  isException = false,
+}: {
+  label: string;
+  value: number;
+  percentage: number;
+  color: string;
+  barColor?: string;
+  isException?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between p-3 rounded-lg ${color} border border-[#1a1a1a]`}
+    >
+      <div className="flex-1">
+        <span
+          className={`text-sm font-medium ${isException && value > 0 ? "text-[#F05252]" : "text-[#E8EDF5]"}`}
+        >
+          {label}
+        </span>
+      </div>
+      <div className="flex-1 flex justify-center">
+        <div className="w-full bg-[#222B3A] rounded-full h-1.5 max-w-xs overflow-hidden">
+          <div
+            className={`h-1.5 rounded-full ${barColor}`}
+            style={{ width: `${Math.max(percentage, 1)}%` }}
+          ></div>
+        </div>
+      </div>
+      <div className="flex-1 flex justify-end">
+        <span className="text-sm font-mono text-[#8B96A8]">
+          {value} records
+        </span>
+      </div>
     </div>
   );
 }
