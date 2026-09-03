@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans flex h-screen bg-black text-[#E8EDF5]`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans flex h-screen bg-dot-matrix text-[#E8EDF5]`}
       >
         <Sidebar />
         <main className="flex-1 overflow-y-auto">{children}</main>
