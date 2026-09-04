@@ -15,6 +15,7 @@ import {
 import { KpiCard } from "./components/KpiCard";
 import { FunnelBar } from "./components/FunnelBar";
 import { GlowingDropzone } from "./components/GlowingDropzone";
+import { SchemaEditor } from "./components/SchemaEditor";
 
 export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
@@ -47,6 +48,19 @@ export default function Dashboard() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleMappingChange = (
+    fileIndex: number,
+    mappingIndex: number,
+    newColumn: string,
+  ) => {
+    setSchemaData((prev: any) => {
+      const newData = { ...prev };
+      newData.files[fileIndex].mappings[mappingIndex].canonical_column =
+        newColumn;
+      return newData;
+    });
   };
 
   const confirmAndReconcile = async () => {
@@ -162,45 +176,12 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {schemaData.files.map((file: any, index: number) => (
-              <div
+              <SchemaEditor
                 key={index}
-                className="border border-[#1a1a1a] bg-[#0A0A0A] rounded-xl overflow-hidden"
-              >
-                <div className="p-4 border-b border-[#1a1a1a] flex items-center justify-between bg-[#111111]">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#8B96A8]" />
-                    <span className="text-sm font-medium text-white">
-                      {file.filename}
-                    </span>
-                  </div>
-                  <span className="text-[10px] uppercase tracking-wider font-mono px-2 py-1 bg-[#222B3A] text-[#E8EDF5] rounded">
-                    {file.file_type}
-                  </span>
-                </div>
-                <div className="p-4">
-                  <p className="text-xs text-[#8B96A8] mb-4 leading-relaxed">
-                    {file.reasoning}
-                  </p>
-                  <div className="space-y-2">
-                    {file.mappings.map((mapping: any, mIdx: number) => (
-                      <div
-                        key={mIdx}
-                        className="flex items-center justify-between text-xs"
-                      >
-                        <span className="font-mono text-[#8B96A8]">
-                          {mapping.source_column}
-                        </span>
-                        <ArrowRight className="w-3 h-3 text-[#333333]" />
-                        <span
-                          className={`font-mono ${mapping.canonical_column === "ignore" ? "text-[#555555] line-through" : "text-[#00E5FF]"}`}
-                        >
-                          {mapping.canonical_column}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                file={file}
+                fileIndex={index}
+                onUpdateMapping={handleMappingChange}
+              />
             ))}
           </div>
         </div>
