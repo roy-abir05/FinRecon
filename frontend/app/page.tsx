@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { KpiCard } from "./components/KpiCard";
 import { FunnelBar } from "./components/FunnelBar";
+import { GlowingDropzone } from "./components/GlowingDropzone";
 
 export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
@@ -113,28 +114,12 @@ export default function Dashboard() {
         )}
       </header>
 
-      {/* FILE UPLOAD */}
+      {/* FILE UPLOAD DROPZONE */}
       {!schemaData && !metrics && (
-        <div className="border border-dashed border-[#222B3A] bg-[#0A0A0A] hover:bg-[#111111] transition-colors rounded-xl h-64 flex flex-col items-center justify-center text-[#8B96A8] text-sm relative group cursor-pointer">
-          <input
-            type="file"
-            multiple
-            onChange={handleFileUpload}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-            accept=".csv"
-          />
-          {isUploading ? (
-            <Loader2 className="w-8 h-8 mb-3 text-[#00E5FF] animate-spin" />
-          ) : (
-            <UploadCloud className="w-8 h-8 mb-3 text-[#333333] group-hover:text-[#00E5FF] transition-colors" />
-          )}
-          <p className="font-mono text-white">
-            {isUploading ? "INFERRING_SCHEMA..." : "DROP_CSV_FILES_HERE"}
-          </p>
-          <p className="text-xs mt-2 text-[#555555]">
-            Click or drag files to begin AI Schema Inference.
-          </p>
-        </div>
+        <GlowingDropzone
+          onUpload={handleFileUpload}
+          isUploading={isUploading}
+        />
       )}
 
       {/* SCHEMA REVIEW */}
