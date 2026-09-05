@@ -8,9 +8,7 @@ import {
   AlertCircle,
   Database,
   ArrowRight,
-  UploadCloud,
-  FileText,
-  Check,
+  Download
 } from "lucide-react";
 import { KpiCard } from "./components/KpiCard";
 import { FunnelBar } from "./components/FunnelBar";
@@ -101,6 +99,33 @@ export default function Dashboard() {
     } finally {
       setIsRunning(false);
     }
+  };
+
+  const downloadCSV = () => {
+    if (!reconData) return;
+
+    const { exact_matches, ai_matches, exceptions } = reconData.data;
+    const allRecords = [...exact_matches, ...ai_matches, ...exceptions];
+
+    if (allRecords.length === 0) return;
+
+    const headers = Object.keys(allRecords[0]);
+    
+    const csvContent = [
+      headers.join(","),
+      ...allRecords.map(row => 
+        headers.map(fieldName => JSON.stringify(row[fieldName] || "")).join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `finrecon_master_ledger_${batchId || 'latest'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -296,6 +321,14 @@ export default function Dashboard() {
                 isException
               />
             </div>
+          </div>
+          <div className="flex justify-end mt-4 animate-in fade-in duration-700 delay-300">
+            <button 
+              onClick={downloadCSV}
+              className="flex items-center gap-2 bg-[#00E5FF]/10 text-[#00E5FF] border border-[#00E5FF]/30 px-5 py-2.5 rounded-lg text-xs font-mono hover:bg-[#00E5FF]/20 transition-all cursor-pointer shadow-[0_0_15px_rgba(0,229,255,0.1)]"
+            >
+              <Download className="w-4 h-4" /> EXPORT_MASTER_LEDGER.csv
+            </button>
           </div>
         </div>
       )}
