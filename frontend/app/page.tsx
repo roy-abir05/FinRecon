@@ -28,15 +28,18 @@ export default function Dashboard() {
   const [batchId, setBatchId] = useState<string | null>(null);
   const { reconData, setReconData } = useRecon();
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setRawFiles(e.target.files);
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    setRawFiles(e.target.files);
+    if (!rawFiles) return;
     setIsUploading(true);
 
     const formData = new FormData();
-    Array.from(e.target.files).forEach((file) =>
-      formData.append("files", file),
-    );
+    Array.from(rawFiles).forEach((file) => formData.append("files", file));
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/v1/map-schema", {
@@ -88,7 +91,7 @@ export default function Dashboard() {
         setMetrics(data.metrics);
         setReconData({
           metrics: data.metrics,
-          data: data.data
+          data: data.data,
         });
       } else {
         console.error("Backend Error:", data.message);
@@ -138,8 +141,10 @@ export default function Dashboard() {
       {/* FILE UPLOAD DROPZONE */}
       {!schemaData && !metrics && (
         <GlowingDropzone
-          onUpload={handleFileUpload}
+          onFileSelect={handleFileSelect}
+          onAnalyze={handleFileUpload}
           isUploading={isUploading}
+          selectedFiles={rawFiles}
         />
       )}
 
