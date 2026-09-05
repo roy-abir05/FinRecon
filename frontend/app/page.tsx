@@ -16,6 +16,7 @@ import { KpiCard } from "./components/KpiCard";
 import { FunnelBar } from "./components/FunnelBar";
 import { GlowingDropzone } from "./components/GlowingDropzone";
 import { SchemaEditor } from "./components/SchemaEditor";
+import { TerminalLogger } from "./components/TerminalLogger";
 
 export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
@@ -137,7 +138,7 @@ export default function Dashboard() {
       )}
 
       {/* SCHEMA REVIEW */}
-      {schemaData && !metrics && (
+      {schemaData && !metrics && !isRunning && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-4 p-4 rounded-xl border border-[#1a1a1a] bg-[#0A0A0A]">
             <div
@@ -184,6 +185,13 @@ export default function Dashboard() {
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* TERMINAL EXECUTION */}
+      {isRunning && (
+        <div className="animate-in fade-in zoom-in-95 duration-500">
+          <TerminalLogger />
         </div>
       )}
 
