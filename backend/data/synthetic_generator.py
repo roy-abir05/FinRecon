@@ -107,17 +107,30 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     orders_df, gateway_df, bank_df, stats = generate_datasets(args.count, args.seed)
-
-    orders_df.to_csv("orders.csv", index=False)
-    gateway_df.to_csv("gateway.csv", index=False)
-    bank_df.to_csv("bank.csv", index=False)
     
-    print(f"\n[SUCCESS] Generated {args.count} synthetic records in data/ directory.\n")
+    order_names = ["Internal_ERP_Export.csv", "Shopify_Orders_Aug.csv", "Anand_Kirana_DB.csv"]
+    gateway_names = ["Razorpay_Settlement_Report.csv", "PG_Extract_RAW.csv", "Razorpay_Batch_77.csv"]
+    bank_names = ["HDFC_Current_Account.csv", "Axis_Bank_Stmt.csv", "ICICI_Nodal_Export.csv"]
+
+    order_file = random.choice(order_names)
+    gateway_file = random.choice(gateway_names)
+    bank_file = random.choice(bank_names)
+
+    orders_df.to_csv(order_file, index=False)
+    gateway_df.to_csv(gateway_file, index=False)
+    bank_df.to_csv(bank_file, index=False)
+    
+    print(f"\n[SUCCESS] Generated {args.count} synthetic records.")
+    print("Files created in current directory:")
+    print(f" 📄 {order_file}")
+    print(f" 📄 {gateway_file}")
+    print(f" 📄 {bank_file}\n")
+    
     print("--- CHAOS REPORT ---")
     print(f"✅ Perfect Matches:      {stats['perfect']}")
     print(f"✨ AI Target (Rounding): {stats['rounding']}")
     print(f"✨ AI Target (T+2 Date): {stats['drift']}")
     print(f"✨ AI Target (Mangled):  {stats['mangled']}")
-    print(f"⚠️ Missing from Bank:   {stats['dropped']}")
-    print(f"⚠️ Orphan Bank Credits: {stats['orphans']}")
+    print(f"⚠️ Missing from Bank:    {stats['dropped']}")
+    print(f"⚠️ Orphan Bank Credits:  {stats['orphans']}")
     print("--------------------\n")
