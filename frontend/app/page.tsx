@@ -16,8 +16,8 @@ import { KpiCard } from "./components/KpiCard";
 import { FunnelBar } from "./components/FunnelBar";
 import { GlowingDropzone } from "./components/GlowingDropzone";
 import { SchemaEditor } from "./components/SchemaEditor";
-import { TerminalLogger } from "./components/TerminalLogger";
 import { useRecon } from "./context/ReconContext";
+import { PipelineLoader } from "./components/PipelineLoader";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -274,7 +274,7 @@ export default function Dashboard() {
       {/* TERMINAL EXECUTION */}
       {isRunning && (
         <div className="animate-in fade-in zoom-in-95 duration-500">
-          <TerminalLogger />
+          <PipelineLoader />
         </div>
       )}
 
