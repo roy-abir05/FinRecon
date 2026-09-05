@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "./components/Sidebar";
+import { ReconProvider } from "./context/ReconContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({
@@ -24,8 +25,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans flex h-screen bg-dot-matrix text-[#E8EDF5]`}
       >
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <ReconProvider>
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto">{children}</main>
+        </ReconProvider>
       </body>
     </html>
   );

@@ -17,6 +17,7 @@ import { FunnelBar } from "./components/FunnelBar";
 import { GlowingDropzone } from "./components/GlowingDropzone";
 import { SchemaEditor } from "./components/SchemaEditor";
 import { TerminalLogger } from "./components/TerminalLogger";
+import { useRecon } from "./context/ReconContext";
 
 export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
@@ -25,6 +26,7 @@ export default function Dashboard() {
   const [metrics, setMetrics] = useState<any>(null);
   const [rawFiles, setRawFiles] = useState<FileList | null>(null);
   const [batchId, setBatchId] = useState<string | null>(null);
+  const { reconData, setReconData } = useRecon();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -84,6 +86,10 @@ export default function Dashboard() {
 
       if (data.status === "success") {
         setMetrics(data.metrics);
+        setReconData({
+          metrics: data.metrics,
+          data: data.data
+        });
       } else {
         console.error("Backend Error:", data.message);
       }
